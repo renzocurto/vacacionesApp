@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Team {
+  id        String          @id @default(cuid())
+  name      String          @unique
+  users     User[]
+  quotas    TeamWeekQuota[]
+  createdAt DateTime        @default(now())
+}
+
+model TeamWeekQuota {
+  id       String @id @default(cuid())
+  teamId   String
+  team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  week     Int
+  maxSlots Int
+
+  @@unique([teamId, week])
+}
+
+// Cada empleado entra con un link personal único (token), sin password ni mail.
+model User {
+  id         String      @id @default(cuid())
+  email      String      @unique
+  name       String
+  token      String      @unique @default(cuid())
+  teamId     String
+  team       Team        @relation(fields: [teamId], references: [id])
+  assignment Assignment?
+  createdAt  DateTime    @default(now())
+}
+
+model Assignment {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  week      Int
+  updatedAt DateTime @updatedAt
+}
